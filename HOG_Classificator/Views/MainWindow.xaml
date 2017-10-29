@@ -1,0 +1,98 @@
+﻿<Window x:Class="HOG_Classificator.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="350" Width="525">
+
+	<Grid x:Name="Container">
+		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto" />
+			<RowDefinition Height="*" />
+			<RowDefinition Height="20" />
+		</Grid.RowDefinitions>
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="*" />
+			<ColumnDefinition Width="4*" />
+		</Grid.ColumnDefinitions>
+
+		<Menu Grid.Row="0"
+		      Grid.Column="0"
+		      Grid.ColumnSpan="2"
+		      HorizontalAlignment="Left"
+		      VerticalAlignment="Stretch">
+
+			<MenuItem Header="File">
+				<MenuItem Header="Open" Click="OpenFile" />
+
+			</MenuItem>
+			<MenuItem Header="Preprocess">
+				<MenuItem Header="Preprocessing" Click="Preprocess" />
+				<MenuItem Header="Crop" Click="Crop" />
+				<MenuItem Header="Add Training Samples To Database" Click="AddToDatabase" />
+				<MenuItem Header="Train" Click="Train"/>
+			</MenuItem>
+		</Menu>
+
+		<Border Grid.Row="1"
+		        Grid.Column="1"
+		        BorderBrush="Black"
+		        BorderThickness="2">
+
+			<Image x:Name="CurrentImage"
+			       Margin="10" />
+		</Border>
+
+		<StackPanel Grid.Row="1"
+		            Grid.Column="0"
+		            HorizontalAlignment="Stretch"
+		            VerticalAlignment="Stretch"
+		            Margin="5,10">
+
+			<Label HorizontalAlignment="Stretch"
+			       VerticalAlignment="Stretch"
+			       HorizontalContentAlignment="Center">
+
+				<TextBlock TextWrapping="WrapWithOverflow"
+				           Text="Percentage of black pixels" />
+			</Label>
+
+			<Slider x:Name="SliderBlack"
+			        Minimum="0"
+			        Maximum="100"
+			        Value="2"
+			        IsSnapToTickEnabled="True"
+			        TickFrequency="1" />
+
+			<Label Content="{Binding ElementName=SliderBlack, Path=Value}"
+			       ContentStringFormat="{}{0}}"
+			       HorizontalContentAlignment="Center" />
+
+			<Label HorizontalAlignment="Stretch"
+			       VerticalAlignment="Stretch"
+			       HorizontalContentAlignment="Center">
+
+				<TextBlock TextWrapping="WrapWithOverflow"
+				           Text="Percentage of white pixels" />
+			</Label>
+
+			<Slider x:Name="SliderWhite"
+			        Minimum="0"
+			        Maximum="100"
+			        Value="1"
+			        IsSnapToTickEnabled="True"
+			        TickFrequency="1" />
+
+			<Label Content="{Binding ElementName=SliderWhite, Path=Value}"
+			       ContentStringFormat="{}{0}}"
+			       HorizontalContentAlignment="Center" />
+		</StackPanel>
+
+		<ProgressBar Grid.Column="0"
+		             Grid.ColumnSpan="2"
+		             Grid.Row="2" 
+					 Padding="10,2,10,2"
+					 x:Name="ProgressBar"/>
+	</Grid>
+</Window>
