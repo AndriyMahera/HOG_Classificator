@@ -22,7 +22,12 @@ namespace HOG_Classificator.Helpers
 		/// <summary>
 		/// Gets the center.
 		/// </summary>
-		public Point Center => new Point(Frame.X + Frame.Width / 2, Frame.Y + Frame.Y / 2);
+		public Point CalculatedCenter => new Point(Frame.X + Frame.Width / 2, Frame.Y + Frame.Y / 2);
+
+		/// <summary>
+		/// Gets or sets the center.
+		/// </summary>
+		public Point Center { get; set; }
 
 		/// <summary>
 		/// Gets or sets the percentage.

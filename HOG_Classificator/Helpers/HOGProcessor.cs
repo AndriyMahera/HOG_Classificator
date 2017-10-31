@@ -276,7 +276,7 @@ namespace HOG_Classificator.Helpers
 
 			byte[] framedArray = new byte[newStride * newHeight];
 
-			//Center
+			//CalculatedCenter
 			for (int i = 0; i < Constants.CELL_SIZE; i++)
 			{
 				Buffer.BlockCopy(
