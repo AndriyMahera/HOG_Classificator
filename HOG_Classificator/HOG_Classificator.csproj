@@ -90,7 +90,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Helpers\ClusterisationProcessor.cs" />
-    <Compile Include="Helpers\RecognizedObjects.cs" />
+    <Compile Include="Helpers\RecognizedObject.cs" />
     <Compile Include="Infrastructure\ProgressArgs.cs" />
     <Compile Include="Infrastructure\SessionStorage.cs" />
     <Page Include="Views\MainWindow.xaml">

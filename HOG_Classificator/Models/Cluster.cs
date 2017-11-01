@@ -14,11 +14,11 @@ namespace HOG_Classificator.Models
 		/// <summary>
 		/// Gets or sets the items list.
 		/// </summary>
-		public IList<RecognizedObjects> ItemsList { get; set; }
+		public IList<RecognizedObject> ItemsList { get; set; }
 
 		/// <summary>
 		/// Gets the center.
 		/// </summary>
-		public RecognizedObjects Center { get; set; }
+		public RecognizedObject Center { get; set; }
 	}
 }

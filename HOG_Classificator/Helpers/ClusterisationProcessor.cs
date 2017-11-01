@@ -18,13 +18,13 @@ namespace HOG_Classificator.Helpers
 		/// <param name="itemsList">The items list.</param>
 		/// <param name="threshold"></param>
 		/// <returns></returns>
-		public IList<Cluster> GetClusters(IList<RecognizedObjects> itemsList, int threshold)
+		public IList<Cluster> GetClusters(IList<RecognizedObject> itemsList, int threshold)
 		{
 			List<Cluster> clustersList = new List<Cluster>();
 
 			bool isClustersEqual = false;
 
-			var centresCopy = new List<RecognizedObjects>(FindClustersCenter(itemsList, threshold));
+			var centresCopy = new List<RecognizedObject>(FindClustersCenter(itemsList, threshold));
 
 			while (!isClustersEqual)
 			{
@@ -70,7 +70,7 @@ namespace HOG_Classificator.Helpers
 					clustersList[index].ItemsList.Add(currentList[j]);
 				}
 
-				centresCopy = new List<RecognizedObjects>(FindNewCenters(clustersList));
+				centresCopy = new List<RecognizedObject>(FindNewCenters(clustersList));
 
 				isClustersEqual = IsOldClustersEqualNews(oldClusters, clustersList);
 
@@ -86,9 +86,9 @@ namespace HOG_Classificator.Helpers
 		/// <param name="itemsList">The items list.</param>
 		/// <param name="threshold">The threshold.</param>
 		/// <returns></returns>
-		public IList<RecognizedObjects> FindClustersCenter(IList<RecognizedObjects> itemsList, double threshold)
+		public IList<RecognizedObject> FindClustersCenter(IList<RecognizedObject> itemsList, double threshold)
 		{
-			var pointsList = new List<RecognizedObjects>();
+			var pointsList = new List<RecognizedObject>();
 			var maxDistancesList = new List<double>();
 			var firstPoint = itemsList.First();
 
@@ -182,7 +182,7 @@ namespace HOG_Classificator.Helpers
 		/// <param name="recObject">The record object.</param>
 		/// <param name="isCenterCalculated"></param>
 		/// <returns></returns>
-		private IList<double> FindDistanses(IList<RecognizedObjects> array, RecognizedObjects recObject, bool isCenterCalculated = true)
+		private IList<double> FindDistanses(IList<RecognizedObject> array, RecognizedObject recObject, bool isCenterCalculated = true)
 		{
 			var result = new double[array.Count];
 
@@ -200,7 +200,7 @@ namespace HOG_Classificator.Helpers
 		/// Clears the clusters.
 		/// </summary>
 		/// <param name="listOfClusters">The list of clusters.</param>
-		private IList<RecognizedObjects> FindNewCenters(IList<Cluster> listOfClusters)
+		private IList<RecognizedObject> FindNewCenters(IList<Cluster> listOfClusters)
 		{
 			Point[] newCentres = new Point[listOfClusters.Count];
 
@@ -210,7 +210,7 @@ namespace HOG_Classificator.Helpers
 					listOfClusters[i].ItemsList.Select(item => item.CalculatedCenter.Y).Average());
 			}
 
-			return newCentres.Select(item => new RecognizedObjects
+			return newCentres.Select(item => new RecognizedObject
 			{
 				Center = item
 			})
@@ -234,9 +234,9 @@ namespace HOG_Classificator.Helpers
 		/// Excepts this instance.
 		/// </summary>
 		/// <returns></returns>
-		private IList<RecognizedObjects> Except(IList<RecognizedObjects> targetList, IList<RecognizedObjects> excepted, bool isCenterCalculated = true)
+		private IList<RecognizedObject> Except(IList<RecognizedObject> targetList, IList<RecognizedObject> excepted, bool isCenterCalculated = true)
 		{
-			var copiedTarget = new List<RecognizedObjects>(targetList);
+			var copiedTarget = new List<RecognizedObject>(targetList);
 
 			foreach (var recObj in excepted)
 			{

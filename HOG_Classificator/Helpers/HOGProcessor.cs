@@ -14,6 +14,7 @@ using Accord.Statistics.Kernels;
 using HOG_Classificator.Enums;
 using HOG_Classificator.Infrastructure;
 using HOG_Classificator.Models;
+using Point = System.Windows.Point;
 
 namespace HOG_Classificator.Helpers
 {
@@ -437,9 +438,9 @@ namespace HOG_Classificator.Helpers
 		/// <param name="width">The width.</param>
 		/// <param name="height">The height.</param>
 		/// <param name="step">The step.</param>
-		private Task<List<RecognizedObjects>> OnePassOfWindow(BitmapSource src, int width, int height, int step)
+		private Task<List<RecognizedObject>> OnePassOfWindow(BitmapSource src, int width, int height, int step)
 		{
-			var recognizedList = new List<RecognizedObjects>();
+			var recognizedList = new List<RecognizedObject>();
 			int counter = 0;
 
 			return Task.Run(() =>
@@ -462,7 +463,7 @@ namespace HOG_Classificator.Helpers
 
 							if (isHuman)
 							{
-								recognizedList.Add(new RecognizedObjects
+								recognizedList.Add(new RecognizedObject
 								{
 									ID = counter,
 									Percentage = percent,
@@ -489,7 +490,7 @@ namespace HOG_Classificator.Helpers
 		/// <param name="src">The source.</param>
 		/// <param name="step">The step.</param>
 		/// <returns></returns>
-		public Task<List<RecognizedObjects>[]> AllPassesOfWindow(BitmapSource src, int step)
+		public Task<List<RecognizedObject>[]> AllPassesOfWindow(BitmapSource src, int step)
 		{
 			var preprocessedArray = _imageProcessor.PreprocessImage(src, Filter.Sobel);
 			var preprocessedImage = AuxiliaryMethods.BitmapSourceFromArray(preprocessedArray, false);
@@ -497,7 +498,7 @@ namespace HOG_Classificator.Helpers
 			int width = Constants.WIDTH;
 			int height = Constants.HEIGHT;
 
-			var taskList = new List<Task<List<RecognizedObjects>>>();
+			var taskList = new List<Task<List<RecognizedObject>>>();
 
 			while (width < preprocessedImage.Width && height < preprocessedImage.Height)
 			{
@@ -508,6 +509,50 @@ namespace HOG_Classificator.Helpers
 			}
 
 			return Task.WhenAll(taskList);
+		}
+
+		/// <summary>
+		/// Determines whether [is centers are equal] [the specified center real].
+		/// </summary>
+		/// <param name="centerReal">The center real.</param>
+		/// <param name="centerComputed">The center computed.</param>
+		/// <param name="tolerance">The tolerance.</param>
+		/// <returns>
+		///   <c>true</c> if [is centers are equal] [the specified center real]; otherwise, <c>false</c>.
+		/// </returns>
+		private bool IsCentersAreEqual(Point centerReal, Point centerComputed, int tolerance) =>
+			Math.Pow(centerComputed.X - centerReal.X, 2) + Math.Pow(centerComputed.Y - centerReal.Y, 2) <= tolerance * tolerance;
+
+		/// <summary>
+		/// Gets the percentage of real recognition.
+		/// </summary>
+		/// <param name="etalonList">The etalon list.</param>
+		/// <param name="computedList">The computed list.</param>
+		/// <param name="tolerance">The tolerance.</param>
+		/// <returns></returns>
+		public double GetPercentageOfRealRecognition(IList<RecognizedObject[]> etalonList,
+			IList<RecognizedObject[]> computedList, int tolerance)
+		{
+			int counterOfFineRecognition = 0;
+
+			for (int i = 0; i < etalonList.Count; i++)
+			{
+				var etalonRow = etalonList[i];
+				var computedRow = computedList[i];
+
+				foreach (RecognizedObject cell in computedRow)
+				{
+					if (!cell.Frame.IsEmpty && etalonRow.Any(x => IsCentersAreEqual(x.CalculatedCenter, cell.CalculatedCenter, tolerance)))
+					{
+						counterOfFineRecognition++;
+					}
+				}
+			}
+
+			int commonCount = etalonList.SelectMany(item => item).Count();
+
+			return counterOfFineRecognition * 100d / (double)commonCount;
+
 		}
 	}
 }
