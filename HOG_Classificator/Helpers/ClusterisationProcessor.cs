@@ -35,7 +35,7 @@ namespace HOG_Classificator.Helpers
 				{
 					clustersList.Add(new Cluster
 					{
-						Center = center
+						CenterObject = center
 					});
 				}
 
@@ -44,7 +44,7 @@ namespace HOG_Classificator.Helpers
 
 				for (int i = 0; i < clustersList.Count; i++)
 				{
-					distanses[i] = FindDistanses(currentList, clustersList[i].Center, false).ToArray();
+					distanses[i] = FindDistanses(currentList, clustersList[i].CenterObject, false).ToArray();
 				}
 
 				double[] minDistanseArray = new double[currentList.Count];

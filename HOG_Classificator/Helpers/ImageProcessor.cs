@@ -402,11 +402,11 @@ namespace HOG_Classificator.Helpers
 		/// </summary>
 		/// <param name="inputArray">The input array.</param>
 		/// <returns>framed byte array</returns>
-		private byte[] MakeFrame(byte[] inputArray)
+		public byte[] MakeFrame(byte[] inputArray)
 		{
 			byte[] framedArray = new byte[SessionStorage.NewStride * SessionStorage.NewHeight];
 
-			//Center
+			//CenterObject
 			for (int i = 0; i < SessionStorage.Height; i++)
 			{
 				Buffer.BlockCopy(

@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media.Imaging;
@@ -36,6 +37,11 @@ namespace HOG_Classificator.Helpers
 		private readonly ImageProcessor _imageProcessor;
 
 		/// <summary>
+		/// The clusterisation processor
+		/// </summary>
+		private readonly ClusterisationProcessor _clusterisationProcessor;
+
+		/// <summary>
 		/// The SVM
 		/// </summary>
 		private readonly SupportVectorMachine<Gaussian> _svm;
@@ -55,6 +61,7 @@ namespace HOG_Classificator.Helpers
 			}
 
 			_imageProcessor = new ImageProcessor();
+			_clusterisationProcessor = new ClusterisationProcessor();
 		}
 
 		#endregion
@@ -78,6 +85,12 @@ namespace HOG_Classificator.Helpers
 
 			return normalizedVector;
 		}
+
+		/// <summary>
+		/// Extracts the hog accord.
+		/// </summary>
+		/// <param name="image">The image.</param>
+		/// <returns></returns>
 		public IList<double> ExtractHogAccord(Bitmap image)
 		{
 			var hog = new HistogramsOfOrientedGradients();
@@ -89,6 +102,11 @@ namespace HOG_Classificator.Helpers
 
 		}
 
+		/// <summary>
+		/// To the one line.
+		/// </summary>
+		/// <param name="hog">The hog.</param>
+		/// <returns></returns>
 		public IList<double> ToOneLine(double[,][] hog)
 		{
 			List<double> list = new List<double>();
@@ -109,9 +127,12 @@ namespace HOG_Classificator.Helpers
 		/// <returns>sliced array</returns>
 		private byte[][] SliceOnCells(byte[] inputArray)
 		{
+			var framedArray = _imageProcessor.MakeFrame(inputArray);
+
 			var position = 0;
-			var byteLength = Constants.CELL_SIZE * SessionStorage.BytesPerPixel;
-			var cellSize = Constants.CELL_SIZE * byteLength;
+			var newCellSize = Constants.CELL_SIZE + 2;
+			var byteLength = newCellSize * SessionStorage.BytesPerPixel;
+			var byteCellSize = newCellSize * byteLength;
 
 			byte[][] outputArray = new byte[Constants.WIDTH * Constants.HEIGHT / Constants.CELL_SIZE / Constants.CELL_SIZE][];
 
@@ -121,12 +142,12 @@ namespace HOG_Classificator.Helpers
 				{
 					var byteOffset = j * SessionStorage.Width + i * SessionStorage.BytesPerPixel;
 
-					outputArray[position] = new byte[cellSize];
+					outputArray[position] = new byte[byteCellSize];
 
-					for (int k = 0; k < Constants.CELL_SIZE; k++)
+					for (int k = 0; k < newCellSize; k++)
 					{
-						Buffer.BlockCopy(inputArray, byteOffset + k * SessionStorage.Stride, outputArray[position], k * byteLength,
-							byteLength);
+						Buffer.BlockCopy(framedArray, byteOffset + k * (SessionStorage.Stride + 2 * SessionStorage.BytesPerPixel),
+							outputArray[position], k * byteLength, byteLength);
 					}
 
 					position++;
@@ -149,7 +170,6 @@ namespace HOG_Classificator.Helpers
 			var magnitudes = new int[Constants.CELL_SIZE * Constants.CELL_SIZE];
 			var angles = new int[Constants.CELL_SIZE * Constants.CELL_SIZE];
 			var size = Constants.CELL_SIZE + 2 * SessionStorage.FrameThickness;
-			targetArray = MakeCellFrame(inputArray, 1);
 			targetArray = GetChannel(targetArray).ToArray();
 
 			var filterOffset = 1;
@@ -253,79 +273,14 @@ namespace HOG_Classificator.Helpers
 					}
 
 					var norma = Math.Sqrt(unitedList.Select(item => item * item).Sum());
-					var divider = norma == 0 ? 1 : 1d / norma;
+					var multiplier = 1d/Math.Sqrt(norma * norma + 0.01);
 
-					finalList.AddRange(unitedList.Select(item => item * divider));
+					finalList.AddRange(unitedList.Select(item => item * multiplier));
 				}
 			}
 
 			return finalList;
 
-		}
-
-		/// <summary>
-		/// Makes the cell frame.
-		/// </summary>
-		/// <param name="inputArray">The input array.</param>
-		/// <param name="frameThickness">The frame thickness.</param>
-		/// <returns></returns>
-		private byte[] MakeCellFrame(byte[] inputArray, int frameThickness)
-		{
-			var stride = Constants.CELL_SIZE * SessionStorage.BytesPerPixel;
-			var newStride = stride + 2 * frameThickness * SessionStorage.BytesPerPixel;
-			var newHeight = Constants.CELL_SIZE + 2 * frameThickness;
-
-			byte[] framedArray = new byte[newStride * newHeight];
-
-			//CalculatedCenter
-			for (int i = 0; i < Constants.CELL_SIZE; i++)
-			{
-				Buffer.BlockCopy(
-					inputArray,
-					stride * i,
-					framedArray,
-					(i + frameThickness) * newStride + SessionStorage.BytesPerPixel * frameThickness,
-					stride);
-			}
-
-			//Horizontal frames
-			for (int i = 0; i < frameThickness; i++)
-			{
-				Buffer.BlockCopy(
-					framedArray,
-					newStride * (frameThickness - i),
-					framedArray,
-					newStride * (frameThickness - (i + 1)),
-					newStride);
-
-				Buffer.BlockCopy(
-					framedArray,
-					newStride * (newHeight - (frameThickness - i + 1)),
-					framedArray,
-					newStride * (newHeight - (frameThickness - i)),
-					newStride);
-			}
-
-			//Vertical frames
-			//ToDo to achieve better result need to make another cycle
-			for (int i = 0; i < newHeight; i++)
-			{
-				Buffer.BlockCopy(
-					framedArray,
-					frameThickness * SessionStorage.BytesPerPixel + newStride * i,
-					framedArray,
-					i * newStride,
-					SessionStorage.BytesPerPixel * frameThickness);
-
-				Buffer.BlockCopy(
-					framedArray,
-					newStride * (i + 1) - 2 * frameThickness * SessionStorage.BytesPerPixel,
-					framedArray,
-					newStride * (i + 1) - frameThickness * SessionStorage.BytesPerPixel,
-					SessionStorage.BytesPerPixel * frameThickness);
-			}
-
-			return framedArray;
 		}
 
 		/// <summary>
@@ -353,11 +308,11 @@ namespace HOG_Classificator.Helpers
 				}
 
 				var image = new BitmapImage(new Uri(filename, UriKind.RelativeOrAbsolute));
-				var bimapImage = new Bitmap(filename);
+				//var bimapImage = new Bitmap(filename);
 
 				var byteArray = image.ToByteArray();
-				//var hogVector = ExtractHog(byteArray);
-				var hogVector = ExtractHogAccord(bimapImage);
+				var hogVector = ExtractHog(byteArray);
+				//var hogVector = ExtractHogAccord(bimapImage);
 
 				var objOfRec = new ObjectOfRecognition
 				{
@@ -453,10 +408,10 @@ namespace HOG_Classificator.Helpers
 							var croppedImage = _imageProcessor.CropImage(src, frame);
 							var resizedImage = _imageProcessor.ResizeImage(croppedImage);
 
-							var exactBitmap = GetBitmap(resizedImage);
+							//var exactBitmap = GetBitmap(resizedImage);
 
-							//var hog = ExtractHog(resizedImage.ToByteArray()).ToArray();
-							var hog = ExtractHogAccord(exactBitmap).ToArray();
+							var hog = ExtractHog(resizedImage.ToByteArray()).ToArray();
+							//var hog = ExtractHogAccord(exactBitmap).ToArray();
 
 							double percent = _svm.Probability(hog);
 							bool isHuman = percent >= Constants.ETALON_PERCENTAGE;
@@ -524,14 +479,95 @@ namespace HOG_Classificator.Helpers
 			Math.Pow(centerComputed.X - centerReal.X, 2) + Math.Pow(centerComputed.Y - centerReal.Y, 2) <= tolerance * tolerance;
 
 		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="pathAnnotationsIn"></param>
+		/// <param name="pathImagesIn"></param>
+		public async Task<double> TestClassificator(string pathAnnotationsIn, string pathImagesIn)
+		{
+			var annotations = Directory.GetFiles(pathAnnotationsIn);
+			var images = Directory.GetFiles(pathImagesIn);
+
+			var listOfRealObjects = new List<List<RecognizedObject>>();
+			var listOfRecognizedObjects = new List<List<RecognizedObject>>();
+
+			if (annotations.Length != images.Length)
+			{
+				throw new ArgumentException("Amount of annotation not equal to amount of images.Check train folder");
+			}
+
+			var coords = new List<int>();
+
+			int counter = 0;
+
+			//Read real data about images
+			foreach (string annotation in annotations)
+			{
+				var annotationContent = File.ReadAllText(annotation);
+
+				Regex regex = new Regex(Constants.PATERN_FOR_CROPPING);
+
+				listOfRealObjects.Add(new List<RecognizedObject>());
+
+				foreach (Match match in regex.Matches(annotationContent))
+				{
+					coords.Clear();
+					var stringWithValues = match.Value;
+					Regex regexForDigit = new Regex(@"\d+");
+
+					foreach (Match digitMatch in regexForDigit.Matches(stringWithValues))
+					{
+						coords.Add(int.Parse(digitMatch.Value));
+					}
+
+					if (coords.Count < 4)
+					{
+						throw new ArgumentException("There is no coordinates in annotation file");
+					}
+
+					var frame = new Int32Rect(coords[0], coords[1], coords[2] - coords[0], coords[3] - coords[1]);
+
+					listOfRealObjects.Last().Add(new RecognizedObject
+					{
+						Frame = frame,
+						ID = counter
+					});
+
+					counter++;
+				}
+			}
+
+			//Work of classificator
+			for (int i = 0; i < annotations.Length; i++)
+			{
+				var image = new BitmapImage(new Uri(images[i], UriKind.RelativeOrAbsolute));
+				listOfRecognizedObjects.Add(new List<RecognizedObject>());
+				var potentialObjects = (await AllPassesOfWindow(image, 64)).SelectMany(item => item).OrderByDescending(item => item.Percentage).ToList();
+				var clusters = _clusterisationProcessor.GetClusters(potentialObjects, Constants.TOLERANCE);
+
+				foreach (var cluster in clusters)
+				{
+					listOfRecognizedObjects.Last().Add(new RecognizedObject
+					{
+						Frame = cluster.Frame,
+						ID = counter
+					});
+				}
+			}
+
+			return GetPercentageOfRealRecognition(listOfRealObjects, listOfRecognizedObjects, Constants.TOLERANCE);
+
+		}
+
+		/// <summary>
 		/// Gets the percentage of real recognition.
 		/// </summary>
 		/// <param name="etalonList">The etalon list.</param>
 		/// <param name="computedList">The computed list.</param>
 		/// <param name="tolerance">The tolerance.</param>
 		/// <returns></returns>
-		public double GetPercentageOfRealRecognition(IList<RecognizedObject[]> etalonList,
-			IList<RecognizedObject[]> computedList, int tolerance)
+		public double GetPercentageOfRealRecognition(List<List<RecognizedObject>> etalonList,
+			List<List<RecognizedObject>> computedList, int tolerance)
 		{
 			int counterOfFineRecognition = 0;
 

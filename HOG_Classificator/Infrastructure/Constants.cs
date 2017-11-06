@@ -161,5 +161,10 @@ namespace HOG_Classificator.Infrastructure
 		/// The output folder
 		/// </summary>
 		public const string OUTPUT_FOLDER = "OutPut";
+
+		/// <summary>
+		/// The tolerance
+		/// </summary>
+		public const int TOLERANCE = 64;
 	}
 }
